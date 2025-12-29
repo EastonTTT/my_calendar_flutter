@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_calendar/core/constants/enums/enums_calendar.dart';
@@ -16,6 +17,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     on<CalendarFocusedDayChanged>(_onCalendarFocusedDayChanged);
     on<CalendarViewTypeChanged>(_onCalendarViewTypeChanged);
     on<CalendarEventsUpdated>(_onEventsUpdated);
+    on<CalendarEventCreated>(_onEventCreated);
     on<CalendarStreamFailed>(_onStreamFailed);
   }
 
@@ -131,5 +133,12 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         final end = DateTime(focusedDay.year, focusedDay.month + 1, 1);
         return (start, end);
     }
+  }
+
+  FutureOr<void> _onEventCreated(
+    CalendarEventCreated event,
+    Emitter<CalendarState> emit,
+  ) {
+    log(event.toString());
   }
 }

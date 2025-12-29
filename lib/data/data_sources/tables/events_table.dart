@@ -10,6 +10,7 @@ class Events extends Table {
   TextColumn get location => text().nullable()();
   DateTimeColumn get startTime => dateTime()();
   DateTimeColumn get endTime => dateTime()();
+  IntColumn get remindMinutes => integer().nullable()();
   TextColumn get exdate => text().nullable()();
   TextColumn get uid => text().nullable()();
   TextColumn get rrule => text().nullable()();

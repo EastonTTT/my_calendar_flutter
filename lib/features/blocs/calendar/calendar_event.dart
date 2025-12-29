@@ -37,6 +37,24 @@ class CalendarViewTypeChanged extends CalendarEvent {
   List<Object?> get props => [viewType];
 }
 
+class CalendarEventCreated extends CalendarEvent {
+  final String title;
+  final String note;
+  final DateTime startAt;
+  final DateTime endAt;
+  final int remindMinutes;
+  const CalendarEventCreated({
+    required this.title,
+    required this.note,
+    required this.startAt,
+    required this.endAt,
+    required this.remindMinutes,
+  });
+
+  @override
+  List<Object?> get props => [title, note, startAt, endAt, remindMinutes];
+}
+
 class CalendarEventsUpdated extends CalendarEvent {
   final List<Event> events;
   const CalendarEventsUpdated(this.events);

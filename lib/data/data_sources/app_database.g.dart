@@ -605,6 +605,17 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _remindMinutesMeta = const VerificationMeta(
+    'remindMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> remindMinutes = GeneratedColumn<int>(
+    'remind_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _exdateMeta = const VerificationMeta('exdate');
   @override
   late final GeneratedColumn<String> exdate = GeneratedColumn<String>(
@@ -641,6 +652,7 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
     location,
     startTime,
     endTime,
+    remindMinutes,
     exdate,
     uid,
     rrule,
@@ -707,6 +719,15 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
     } else if (isInserting) {
       context.missing(_endTimeMeta);
     }
+    if (data.containsKey('remind_minutes')) {
+      context.handle(
+        _remindMinutesMeta,
+        remindMinutes.isAcceptableOrUnknown(
+          data['remind_minutes']!,
+          _remindMinutesMeta,
+        ),
+      );
+    }
     if (data.containsKey('exdate')) {
       context.handle(
         _exdateMeta,
@@ -762,6 +783,10 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}end_time'],
       )!,
+      remindMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}remind_minutes'],
+      ),
       exdate: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}exdate'],
@@ -791,6 +816,7 @@ class Event extends DataClass implements Insertable<Event> {
   final String? location;
   final DateTime startTime;
   final DateTime endTime;
+  final int? remindMinutes;
   final String? exdate;
   final String? uid;
   final String? rrule;
@@ -802,6 +828,7 @@ class Event extends DataClass implements Insertable<Event> {
     this.location,
     required this.startTime,
     required this.endTime,
+    this.remindMinutes,
     this.exdate,
     this.uid,
     this.rrule,
@@ -820,6 +847,9 @@ class Event extends DataClass implements Insertable<Event> {
     }
     map['start_time'] = Variable<DateTime>(startTime);
     map['end_time'] = Variable<DateTime>(endTime);
+    if (!nullToAbsent || remindMinutes != null) {
+      map['remind_minutes'] = Variable<int>(remindMinutes);
+    }
     if (!nullToAbsent || exdate != null) {
       map['exdate'] = Variable<String>(exdate);
     }
@@ -845,6 +875,9 @@ class Event extends DataClass implements Insertable<Event> {
           : Value(location),
       startTime: Value(startTime),
       endTime: Value(endTime),
+      remindMinutes: remindMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remindMinutes),
       exdate: exdate == null && nullToAbsent
           ? const Value.absent()
           : Value(exdate),
@@ -868,6 +901,7 @@ class Event extends DataClass implements Insertable<Event> {
       location: serializer.fromJson<String?>(json['location']),
       startTime: serializer.fromJson<DateTime>(json['startTime']),
       endTime: serializer.fromJson<DateTime>(json['endTime']),
+      remindMinutes: serializer.fromJson<int?>(json['remindMinutes']),
       exdate: serializer.fromJson<String?>(json['exdate']),
       uid: serializer.fromJson<String?>(json['uid']),
       rrule: serializer.fromJson<String?>(json['rrule']),
@@ -884,6 +918,7 @@ class Event extends DataClass implements Insertable<Event> {
       'location': serializer.toJson<String?>(location),
       'startTime': serializer.toJson<DateTime>(startTime),
       'endTime': serializer.toJson<DateTime>(endTime),
+      'remindMinutes': serializer.toJson<int?>(remindMinutes),
       'exdate': serializer.toJson<String?>(exdate),
       'uid': serializer.toJson<String?>(uid),
       'rrule': serializer.toJson<String?>(rrule),
@@ -898,6 +933,7 @@ class Event extends DataClass implements Insertable<Event> {
     Value<String?> location = const Value.absent(),
     DateTime? startTime,
     DateTime? endTime,
+    Value<int?> remindMinutes = const Value.absent(),
     Value<String?> exdate = const Value.absent(),
     Value<String?> uid = const Value.absent(),
     Value<String?> rrule = const Value.absent(),
@@ -909,6 +945,9 @@ class Event extends DataClass implements Insertable<Event> {
     location: location.present ? location.value : this.location,
     startTime: startTime ?? this.startTime,
     endTime: endTime ?? this.endTime,
+    remindMinutes: remindMinutes.present
+        ? remindMinutes.value
+        : this.remindMinutes,
     exdate: exdate.present ? exdate.value : this.exdate,
     uid: uid.present ? uid.value : this.uid,
     rrule: rrule.present ? rrule.value : this.rrule,
@@ -926,6 +965,9 @@ class Event extends DataClass implements Insertable<Event> {
       location: data.location.present ? data.location.value : this.location,
       startTime: data.startTime.present ? data.startTime.value : this.startTime,
       endTime: data.endTime.present ? data.endTime.value : this.endTime,
+      remindMinutes: data.remindMinutes.present
+          ? data.remindMinutes.value
+          : this.remindMinutes,
       exdate: data.exdate.present ? data.exdate.value : this.exdate,
       uid: data.uid.present ? data.uid.value : this.uid,
       rrule: data.rrule.present ? data.rrule.value : this.rrule,
@@ -942,6 +984,7 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('location: $location, ')
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
+          ..write('remindMinutes: $remindMinutes, ')
           ..write('exdate: $exdate, ')
           ..write('uid: $uid, ')
           ..write('rrule: $rrule')
@@ -958,6 +1001,7 @@ class Event extends DataClass implements Insertable<Event> {
     location,
     startTime,
     endTime,
+    remindMinutes,
     exdate,
     uid,
     rrule,
@@ -973,6 +1017,7 @@ class Event extends DataClass implements Insertable<Event> {
           other.location == this.location &&
           other.startTime == this.startTime &&
           other.endTime == this.endTime &&
+          other.remindMinutes == this.remindMinutes &&
           other.exdate == this.exdate &&
           other.uid == this.uid &&
           other.rrule == this.rrule);
@@ -986,6 +1031,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
   final Value<String?> location;
   final Value<DateTime> startTime;
   final Value<DateTime> endTime;
+  final Value<int?> remindMinutes;
   final Value<String?> exdate;
   final Value<String?> uid;
   final Value<String?> rrule;
@@ -997,6 +1043,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.location = const Value.absent(),
     this.startTime = const Value.absent(),
     this.endTime = const Value.absent(),
+    this.remindMinutes = const Value.absent(),
     this.exdate = const Value.absent(),
     this.uid = const Value.absent(),
     this.rrule = const Value.absent(),
@@ -1009,6 +1056,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.location = const Value.absent(),
     required DateTime startTime,
     required DateTime endTime,
+    this.remindMinutes = const Value.absent(),
     this.exdate = const Value.absent(),
     this.uid = const Value.absent(),
     this.rrule = const Value.absent(),
@@ -1024,6 +1072,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
     Expression<String>? location,
     Expression<DateTime>? startTime,
     Expression<DateTime>? endTime,
+    Expression<int>? remindMinutes,
     Expression<String>? exdate,
     Expression<String>? uid,
     Expression<String>? rrule,
@@ -1036,6 +1085,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
       if (location != null) 'location': location,
       if (startTime != null) 'start_time': startTime,
       if (endTime != null) 'end_time': endTime,
+      if (remindMinutes != null) 'remind_minutes': remindMinutes,
       if (exdate != null) 'exdate': exdate,
       if (uid != null) 'uid': uid,
       if (rrule != null) 'rrule': rrule,
@@ -1050,6 +1100,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
     Value<String?>? location,
     Value<DateTime>? startTime,
     Value<DateTime>? endTime,
+    Value<int?>? remindMinutes,
     Value<String?>? exdate,
     Value<String?>? uid,
     Value<String?>? rrule,
@@ -1062,6 +1113,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
       location: location ?? this.location,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
+      remindMinutes: remindMinutes ?? this.remindMinutes,
       exdate: exdate ?? this.exdate,
       uid: uid ?? this.uid,
       rrule: rrule ?? this.rrule,
@@ -1092,6 +1144,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
     if (endTime.present) {
       map['end_time'] = Variable<DateTime>(endTime.value);
     }
+    if (remindMinutes.present) {
+      map['remind_minutes'] = Variable<int>(remindMinutes.value);
+    }
     if (exdate.present) {
       map['exdate'] = Variable<String>(exdate.value);
     }
@@ -1114,6 +1169,7 @@ class EventsCompanion extends UpdateCompanion<Event> {
           ..write('location: $location, ')
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
+          ..write('remindMinutes: $remindMinutes, ')
           ..write('exdate: $exdate, ')
           ..write('uid: $uid, ')
           ..write('rrule: $rrule')
@@ -1820,6 +1876,7 @@ typedef $$EventsTableCreateCompanionBuilder =
       Value<String?> location,
       required DateTime startTime,
       required DateTime endTime,
+      Value<int?> remindMinutes,
       Value<String?> exdate,
       Value<String?> uid,
       Value<String?> rrule,
@@ -1833,6 +1890,7 @@ typedef $$EventsTableUpdateCompanionBuilder =
       Value<String?> location,
       Value<DateTime> startTime,
       Value<DateTime> endTime,
+      Value<int?> remindMinutes,
       Value<String?> exdate,
       Value<String?> uid,
       Value<String?> rrule,
@@ -1915,6 +1973,11 @@ class $$EventsTableFilterComposer
 
   ColumnFilters<DateTime> get endTime => $composableBuilder(
     column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get remindMinutes => $composableBuilder(
+    column: $table.remindMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2021,6 +2084,11 @@ class $$EventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get remindMinutes => $composableBuilder(
+    column: $table.remindMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get exdate => $composableBuilder(
     column: $table.exdate,
     builder: (column) => ColumnOrderings(column),
@@ -2088,6 +2156,11 @@ class $$EventsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get endTime =>
       $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<int> get remindMinutes => $composableBuilder(
+    column: $table.remindMinutes,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get exdate =>
       $composableBuilder(column: $table.exdate, builder: (column) => column);
@@ -2182,6 +2255,7 @@ class $$EventsTableTableManager
                 Value<String?> location = const Value.absent(),
                 Value<DateTime> startTime = const Value.absent(),
                 Value<DateTime> endTime = const Value.absent(),
+                Value<int?> remindMinutes = const Value.absent(),
                 Value<String?> exdate = const Value.absent(),
                 Value<String?> uid = const Value.absent(),
                 Value<String?> rrule = const Value.absent(),
@@ -2193,6 +2267,7 @@ class $$EventsTableTableManager
                 location: location,
                 startTime: startTime,
                 endTime: endTime,
+                remindMinutes: remindMinutes,
                 exdate: exdate,
                 uid: uid,
                 rrule: rrule,
@@ -2206,6 +2281,7 @@ class $$EventsTableTableManager
                 Value<String?> location = const Value.absent(),
                 required DateTime startTime,
                 required DateTime endTime,
+                Value<int?> remindMinutes = const Value.absent(),
                 Value<String?> exdate = const Value.absent(),
                 Value<String?> uid = const Value.absent(),
                 Value<String?> rrule = const Value.absent(),
@@ -2217,6 +2293,7 @@ class $$EventsTableTableManager
                 location: location,
                 startTime: startTime,
                 endTime: endTime,
+                remindMinutes: remindMinutes,
                 exdate: exdate,
                 uid: uid,
                 rrule: rrule,
