@@ -37,30 +37,48 @@ class CalendarViewTypeChanged extends CalendarEvent {
   List<Object?> get props => [viewType];
 }
 
-class CalendarEventCreated extends CalendarEvent {
+class CalendarEventUpdateOrCreated extends CalendarEvent {
+  final int? id;
   final String title;
-  final String note;
-  final DateTime startAt;
-  final DateTime endAt;
+  final String description;
+  final DateTime startTime;
+  final DateTime endTime;
   final int remindMinutes;
-  const CalendarEventCreated({
+  final int calendarId;
+  const CalendarEventUpdateOrCreated({
+    required this.id,
     required this.title,
-    required this.note,
-    required this.startAt,
-    required this.endAt,
+    required this.description,
+    required this.startTime,
+    required this.endTime,
     required this.remindMinutes,
+    required this.calendarId,
   });
 
   @override
-  List<Object?> get props => [title, note, startAt, endAt, remindMinutes];
+  List<Object?> get props => [
+    title,
+    description,
+    startTime,
+    endTime,
+    remindMinutes,
+  ];
 }
 
-class CalendarEventsUpdated extends CalendarEvent {
+class CalendarEventUpdated extends CalendarEvent {
   final List<Event> events;
-  const CalendarEventsUpdated(this.events);
+  const CalendarEventUpdated(this.events);
 
   @override
   List<Object?> get props => [events];
+}
+
+class CalendarEventDeleted extends CalendarEvent {
+  final int id;
+  const CalendarEventDeleted(this.id);
+
+  @override
+  List<Object?> get props => [id];
 }
 
 class CalendarStreamFailed extends CalendarEvent {

@@ -15,18 +15,19 @@ class CalendarViewTypeSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = <CalendarViewType>[
+      CalendarViewType.day,
       CalendarViewType.week,
       CalendarViewType.month,
     ];
 
     String getLabel(CalendarViewType viewType) {
       switch (viewType) {
+        case CalendarViewType.day:
+          return 'Day';
         case CalendarViewType.week:
           return 'Week';
         case CalendarViewType.month:
           return 'Month';
-        case CalendarViewType.day:
-          throw UnimplementedError();
       }
     }
 

@@ -1,17 +1,22 @@
-import 'package:flutter/material.dart';
+import 'dart:developer';
 
-class AddEventPage extends StatefulWidget {
-  const AddEventPage({super.key});
+import 'package:flutter/material.dart';
+import 'package:my_calendar/data/data_sources/app_database.dart';
+
+class AddOrUpdateEventPage extends StatefulWidget {
+  final Event? initialEvent;
+  const AddOrUpdateEventPage({super.key, this.initialEvent});
 
   @override
-  State<AddEventPage> createState() => _AddEventPageState();
+  State<AddOrUpdateEventPage> createState() => _AddOrUpdateEventPageState();
 }
 
-class _AddEventPageState extends State<AddEventPage> {
+class _AddOrUpdateEventPageState extends State<AddOrUpdateEventPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   int _remindMinutes = 0;
+  bool get _isEditing => widget.initialEvent != null;
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = TimeOfDay.now();
@@ -27,6 +32,7 @@ class _AddEventPageState extends State<AddEventPage> {
       DateTime(date.year, date.month, date.day, time.hour, time.minute);
 
   void _onSave() {
+    log('onSave called');
     if (!_formKey.currentState!.validate()) return;
 
     final startAt = _combine(_selectedDate, _startTime);
@@ -40,14 +46,33 @@ class _AddEventPageState extends State<AddEventPage> {
     }
 
     final result = {
+      'id': _isEditing ? widget.initialEvent!.id : null,
       'title': _titleCtrl.text.trim(),
-      'note': _noteCtrl.text.trim(),
-      'startAt': startAt,
-      'endAt': endAt,
+      'description': _noteCtrl.text.trim(),
+      'startTime': startAt,
+      'endTime': endAt,
       'remindMinutes': _remindMinutes,
+      'calendarId': 0,
+      'isUpdated': _isEditing,
     };
 
     Navigator.pop(context, result);
+  }
+
+  @override
+  void initState() {
+    log('AddOrUpdateEventPage initState');
+    log(widget.initialEvent.toString());
+    super.initState();
+    if (_isEditing) {
+      final event = widget.initialEvent!;
+      _titleCtrl.text = event.title;
+      _noteCtrl.text = event.description ?? '';
+      _selectedDate = event.startTime;
+      _startTime = TimeOfDay.fromDateTime(event.startTime);
+      _endTime = TimeOfDay.fromDateTime(event.endTime);
+      _remindMinutes = event.remindMinutes ?? 0;
+    }
   }
 
   @override
@@ -61,7 +86,7 @@ class _AddEventPageState extends State<AddEventPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Task'),
+        title: const Text('Editing Your Task'),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
         actions: const [
           Padding(
@@ -80,7 +105,10 @@ class _AddEventPageState extends State<AddEventPage> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _titleCtrl,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  hintText: 'Enter title here.',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (v) => (v == null || v.trim().isEmpty)
                     ? 'Title is required'
                     : null,
@@ -253,7 +281,7 @@ class _AddEventPageState extends State<AddEventPage> {
                   onPressed: () {
                     _onSave();
                   },
-                  child: const Text('Create Event'),
+                  child: Text(_isEditing ? 'Update Event' : 'Create Event'),
                 ),
               ),
             ],

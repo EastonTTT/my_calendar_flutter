@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:developer';
-
+import 'package:drift/drift.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_calendar/core/constants/enums/enums_calendar.dart';
 import 'package:my_calendar/data/data_sources/app_database.dart';
 import 'package:my_calendar/data/repos/events_repository.dart';
 import 'package:my_calendar/features/blocs/calendar/calendar_event.dart';
 import 'package:my_calendar/features/blocs/calendar/calendar_state.dart';
+import 'package:my_calendar/core/services/notification/notification_service.dart';
 
 class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   StreamSubscription<List<Event>>? _eventsSubscription;
@@ -16,9 +17,10 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     on<CalendarSelectedDayChanged>(_onCalendarSelectedDayChanged);
     on<CalendarFocusedDayChanged>(_onCalendarFocusedDayChanged);
     on<CalendarViewTypeChanged>(_onCalendarViewTypeChanged);
-    on<CalendarEventsUpdated>(_onEventsUpdated);
-    on<CalendarEventCreated>(_onEventCreated);
+    on<CalendarEventUpdated>(_onEventsUpdated);
+    on<CalendarEventUpdateOrCreated>(_onEventUpdateOrCreated);
     on<CalendarStreamFailed>(_onStreamFailed);
+    on<CalendarEventDeleted>(_onEventDeleted);
   }
 
   Future<void> _onCalendarInitialized(
@@ -30,7 +32,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   }
 
   void _onEventsUpdated(
-    CalendarEventsUpdated event,
+    CalendarEventUpdated event,
     Emitter<CalendarState> emit,
   ) {
     emit(
@@ -103,7 +105,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     _eventsSubscription = _eventsRepository
         .watchInRange(start, end)
         .listen(
-          (events) => add(CalendarEventsUpdated(events)),
+          (events) => add(CalendarEventUpdated(events)),
           onError: (e, _) => add(CalendarStreamFailed(e)),
         );
   }
@@ -135,10 +137,59 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     }
   }
 
-  FutureOr<void> _onEventCreated(
-    CalendarEventCreated event,
+  FutureOr<void> _onEventUpdateOrCreated(
+    CalendarEventUpdateOrCreated event,
     Emitter<CalendarState> emit,
-  ) {
-    log(event.toString());
+  ) async {
+    emit(state.copyWith(status: CalendarStatus.loading));
+    try {
+      final companion = EventsCompanion(
+        id: event.id == null ? const Value.absent() : Value(event.id!),
+        calendarId: Value(event.calendarId ?? 0),
+        title: Value(event.title),
+        description: Value(event.description),
+        startTime: Value(event.startTime),
+        endTime: Value(event.endTime),
+        remindMinutes: Value(event.remindMinutes),
+      );
+      int eventId;
+      if (event.id == null) {
+        log('event create called');
+        eventId = await _eventsRepository.createEvent(companion);
+      } else {
+        log('event update called');
+        await _eventsRepository.updateEvent(companion);
+        eventId = event.id!;
+      }
+
+      await NotificationService.instance.scheduleNotification(
+        notificationId: eventId,
+        title: event.title,
+        body: event.description,
+        scheduledTime: event.startTime,
+        remindMinutes: event.remindMinutes,
+      );
+
+      emit(state.copyWith(status: CalendarStatus.successful));
+    } catch (e) {
+      log('event created failed:');
+      log(e.toString());
+      emit(state.copyWith(status: CalendarStatus.failed));
+    }
+  }
+
+  FutureOr<void> _onEventDeleted(
+    CalendarEventDeleted event,
+    Emitter<CalendarState> emit,
+  ) async {
+    try {
+      await _eventsRepository.deleteEvent(event.id);
+      await NotificationService.instance.cancelNotification(event.id);
+      emit(state.copyWith(status: CalendarStatus.successful));
+    } catch (e) {
+      log('event deleted failed:');
+      log(e.toString());
+      emit(state.copyWith(status: CalendarStatus.failed));
+    }
   }
 }

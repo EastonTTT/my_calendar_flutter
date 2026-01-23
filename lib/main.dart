@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_calendar/core/constants/routes/calendar_page_routes.dart';
+import 'package:my_calendar/core/services/notification/notification_service.dart';
 import 'package:my_calendar/data/daos/events_dao.dart';
 import 'package:my_calendar/data/data_sources/app_database.dart';
 import 'package:my_calendar/data/repos/events_repository.dart';
 import 'package:my_calendar/features/blocs/calendar/calendar_bloc.dart';
 import 'package:my_calendar/features/blocs/calendar/calendar_event.dart';
-import 'package:my_calendar/features/pages/add_event_page.dart';
+import 'package:my_calendar/features/pages/add_or_update_event_page.dart';
 import 'package:my_calendar/features/pages/calendar_page.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final AppDatabase db = AppDatabase();
   final eventsDao = EventsDao(db);
   final eventsRepository = EventsRepository(eventsDao: eventsDao);
-
+  await NotificationService.instance.init();
+  await NotificationService.instance.requestPermissionIfNeeded();
   runApp(MyApp(eventsRepository: eventsRepository));
 }
 
@@ -32,7 +35,14 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           title: 'My Calendar',
           home: const CalendarPage(),
-          routes: {'/addEventRoute': (context) => const AddEventPage()},
+          routes: {
+            addOrUpdateEventRoute: (context) {
+              final args = ModalRoute.of(context)?.settings.arguments;
+              final initial = args is Event ? args : null;
+
+              return AddOrUpdateEventPage(initialEvent: initial);
+            },
+          },
         ),
       ),
     );
